@@ -5,6 +5,8 @@ import Index from "./pages/Index";
 
 import "./index.css";
 import Start from "./pages/Start";
+import Training from "./pages/Training";
+import SetProvider from "./SetProvider";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +17,7 @@ const router = createBrowserRouter([
     path: "/start",
     element: <Start />,
   },
+  { path: "/training", element: <Training /> },
 ]);
 
 console.log(`
@@ -28,7 +31,9 @@ console.log(`
 `);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
+  //<React.StrictMode>
+  <SetProvider>
     <RouterProvider router={router} />
-  </React.StrictMode>
+  </SetProvider>
+  //</React.StrictMode>
 );

@@ -3,3 +3,8 @@ export type WeaponInUse = {
   rounds: number;
   magazines: number;
 };
+
+export type ActiveSet = {
+  targets: number;
+  weapons: WeaponInUse[];
+};

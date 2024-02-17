@@ -1,12 +1,16 @@
 import { IconMinus, IconPlus, IconX } from "@tabler/icons-react";
-import { useState } from "react";
-
+import { useState, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import { type FormEvent } from "react";
-import { WeaponInUse } from "../../lib/weapons";
+import { WeaponInUse } from "../../lib/types";
+import { SetContext } from "../../SetProvider";
 
 const Start = () => {
   const [targets, setTargets] = useState(2);
   const [weapons, setWeapons] = useState<WeaponInUse[]>([]);
+  const activeSet = useContext(SetContext);
+
+  const navigate = useNavigate();
 
   const changeTargets = (sign: "-" | "+") => {
     if (isTargetChangeUnvailable(sign)) {
@@ -55,6 +59,10 @@ const Start = () => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     //Validate data
+
+    //
+    activeSet!.setActiveSet({ targets, weapons });
+    navigate("/training");
   };
 
   return (
@@ -143,7 +151,9 @@ const Start = () => {
             Dodaj z listy
           </button>
         </div>
-        <button className="btn btn-primary">Rozpocznij</button>
+        <button type="submit" className="btn btn-primary">
+          Rozpocznij
+        </button>
       </form>
     </div>
   );
