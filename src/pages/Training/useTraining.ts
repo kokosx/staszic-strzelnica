@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SetContext } from "../../SetProvider";
 import { useNavigate } from "react-router-dom";
 import { useInterval } from "usehooks-ts";
@@ -18,35 +18,38 @@ export const useTraining = () => {
   }, [ctx, navigate]);
 
   const swap = () => {
-    setIsSwapping(true);
     weapons[currentWeaponIndex].magazines--;
-    let gotDeleted = false;
     if (weapons[currentWeaponIndex].magazines === 0) {
-      gotDeleted = true;
       weapons = weapons.filter((_, i) => i !== currentWeaponIndex);
     }
-    const owi = currentWeaponIndex;
-    const nwi = getRandomTarget(weapons.length);
+    if (weapons.length === 0) {
+      console.log("KONIEC");
+    }
+    const nwi = getRandomIndex(weapons.length);
     let isSameWeapon = false;
-    if (!gotDeleted && owi === nwi) {
+    if (
+      currentWeaponIndex === nwi &&
+      currentWeapon.name === weapons[nwi].name
+    ) {
       isSameWeapon = true;
     }
+
     setCurrentWeaponIndex(nwi);
     setCurrentWeapon(weapons[nwi]);
     setCurrentMessage(getSwapMessage(isSameWeapon));
-    setIsSwapping(false);
+    setShotsFiredFromWeapon(0);
   };
 
   const getSwapMessage = (isSameWeapon: boolean) => {
     if (isSameWeapon) {
-      return `Przeładuj broń`;
+      return `Przeładuj broń ${currentWeapon.name}`;
     }
     return `Zmień broń na ${currentWeapon.name}`;
   };
 
-  const [isSwapping, setIsSwapping] = useState(false);
-
   useInterval(() => {
+    const ev = new CustomEvent("training-change");
+    document.dispatchEvent(ev);
     const isEmpty = shotsFiredFromWeapon === currentWeapon.rounds;
 
     if (isEmpty) {
@@ -59,12 +62,11 @@ export const useTraining = () => {
       setToFire(nshots);
       setShotsFiredFromWeapon((prev) => prev + nshots);
       const ntarget = getRandomTarget(ctx!.activeSet!.targets);
-      console.log(ntarget);
       setCurrentTarget(ntarget);
       //show message
       setCurrentMessage(getMessage(ntarget));
     }
-  }, 3000);
+  }, 1500);
 
   const getRandomTarget = (n: number) => {
     return Math.floor(Math.random() * n) + 1;
