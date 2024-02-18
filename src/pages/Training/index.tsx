@@ -6,7 +6,8 @@ import { useNTraining } from "./useNTraining";
 
 const Training = () => {
   //const { loading, targets, currentMessage, currentTarget } = useTraining();
-  const { loading } = useNTraining();
+  const { loading, activeTarget, currentMessage, targets, startTraining } =
+    useNTraining();
   const [isChangeMessageShown, setIsChangeMessageShown] = useState(false);
 
   useEffect(() => {
@@ -33,9 +34,10 @@ const Training = () => {
   const page = (
     <div className="flex flex-col items-center justify-center min-h-screen gap-y-4">
       <h2 className="text-5xl font-semibold">Trening</h2>
-      {/* <Targets amount={targets} active={currentTarget} />
-      <p>{currentMessage}</p> */}
+      <Targets amount={targets} active={activeTarget} />
+      <p>{currentMessage}</p>
       {isChangeMessageShown && <p>Zmiana!</p>}
+      <button onClick={startTraining}>Start</button>
     </div>
   );
 
