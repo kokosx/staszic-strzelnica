@@ -60,9 +60,8 @@ export const useTraining = () => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(msg);
     const voices = synth.getVoices();
-    utterance.voice = voices.filter(
-      (v) => v.name === "Microsoft Adam - Polish (Poland)"
-    )[0];
+    console.log(voices);
+    utterance.voice = voices.filter((v) => v.lang === "pl-PL")[0];
     synth.speak(utterance);
   };
 
