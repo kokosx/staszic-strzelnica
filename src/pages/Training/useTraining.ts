@@ -1,119 +1,225 @@
 import { useContext, useEffect, useState } from "react";
-import { SetContext } from "../../SetProvider";
 import { useNavigate } from "react-router-dom";
+import { SetContext } from "../../SetProvider";
 import { useInterval } from "usehooks-ts";
+
+const MAX_SHOTS = 3;
+const DEFAULT_DELAY = 5000;
+
+type TrainingRound = {
+  shots: number;
+  target: number;
+};
+
+type TrainingActivity = {
+  weaponIndex: number;
+  weaponName: string;
+  rounds: TrainingRound[];
+};
 
 export const useTraining = () => {
   const ctx = useContext(SetContext);
-  let weapons = ctx!.activeSet!.weapons;
   const [loading, setLoading] = useState(true);
+
   const navigate = useNavigate();
 
+  const [activities, setActivities] = useState<TrainingActivity[]>([]);
+
   useEffect(() => {
-    if (!ctx || !ctx.activeSet) {
-      navigate("/");
-    } else {
+    //Setup indices
+    const indices: Record<string, number> = {};
+    weapons.forEach((v, i) => {
+      const ind = indices[v.name];
+      if (!ind) {
+        indices[v.name] = i;
+      }
+    });
+
+    while (weapons.length > 0) {
+      //Generate random weapon
+      const weaponIndex = randomIndex(weapons.length);
+      const weaponsRounds = getTrainingRoundsForWeapon(weaponIndex);
+      const currentActivity: TrainingActivity = {
+        weaponIndex: indices[weapons[weaponIndex].name],
+        weaponName: weapons[weaponIndex].name,
+        rounds: weaponsRounds,
+      };
+      trainingActivities.push(currentActivity);
+      weapons[weaponIndex].magazines--;
+      if (weapons[weaponIndex].magazines === 0) {
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        weapons = weapons.filter((_, i) => i !== weaponIndex);
+      }
+      setActivities(trainingActivities);
+
       setLoading(false);
     }
   }, [ctx, navigate]);
 
-  const swap = () => {
-    weapons[currentWeaponIndex].magazines--;
-    if (weapons[currentWeaponIndex].magazines === 0) {
-      weapons = weapons.filter((_, i) => i !== currentWeaponIndex);
-    }
-    if (weapons.length === 0) {
-      console.log("KONIEC");
-    }
-    const nwi = getRandomIndex(weapons.length);
-    let isSameWeapon = false;
-    if (
-      currentWeaponIndex === nwi &&
-      currentWeapon.name === weapons[nwi].name
-    ) {
-      isSameWeapon = true;
-    }
+  const speak = (msg: string) => {
+    const synth = window.speechSynthesis;
+    const utterance = new SpeechSynthesisUtterance(msg);
 
-    setCurrentWeaponIndex(nwi);
-    setCurrentWeapon(weapons[nwi]);
-    setCurrentMessage(getSwapMessage(isSameWeapon));
-    setShotsFiredFromWeapon(0);
+    synth.speak(utterance);
   };
 
-  const getSwapMessage = (isSameWeapon: boolean) => {
-    if (isSameWeapon) {
-      return `Przeładuj broń ${currentWeapon.name}`;
-    }
-    return `Zmień broń na ${currentWeapon.name}`;
+  const targets = ctx!.activeSet!.targets;
+
+  let weapons = ctx!.activeSet!.weapons;
+
+  const trainingActivities: TrainingActivity[] = [];
+
+  const randomIndex = (n: number) => {
+    return Math.floor(Math.random() * n);
   };
-
-  useInterval(() => {
-    const ev = new CustomEvent("training-change");
-    document.dispatchEvent(ev);
-    const isEmpty = shotsFiredFromWeapon === currentWeapon.rounds;
-
-    if (isEmpty) {
-      swap();
-    } else {
-      let nshots = 10000;
-      while (nshots > currentWeapon.rounds - shotsFiredFromWeapon) {
-        nshots = getRandomTarget(3);
-      }
-      setToFire(nshots);
-      setShotsFiredFromWeapon((prev) => prev + nshots);
-      const ntarget = getRandomTarget(ctx!.activeSet!.targets);
-      setCurrentTarget(ntarget);
-      //show message
-      setCurrentMessage(getMessage(ntarget));
-    }
-  }, 1500);
 
   const getRandomTarget = (n: number) => {
     return Math.floor(Math.random() * n) + 1;
   };
 
-  const [toFire, setToFire] = useState(getRandomTarget(3));
-  const [shotsFiredFromWeapon, setShotsFiredFromWeapon] = useState(toFire);
+  const generateShots = () => getRandomTarget(MAX_SHOTS);
 
-  const getToFireMessage = () => {
-    if (toFire === 1) {
-      return "singlet";
+  const generateShotsToFire = (leftToFire: number) => {
+    let nshots = generateShots();
+
+    while (nshots > leftToFire) {
+      nshots = generateShots();
     }
-    if (toFire === 2) {
-      return "dublet";
+    return nshots;
+  };
+
+  const getTrainingRoundsForWeapon = (weaponIndex: number): TrainingRound[] => {
+    let fired = 0;
+    const rounds: TrainingRound[] = [];
+    while (fired !== weapons[weaponIndex].rounds) {
+      const leftToFire = weapons[weaponIndex].rounds - fired;
+      const toFire = generateShotsToFire(leftToFire);
+      fired += toFire;
+      const target = getRandomTarget(targets);
+      rounds.push({ shots: toFire, target });
     }
-    if (toFire === 3) {
-      return "triplet";
+
+    return rounds;
+  };
+
+  const [activityIndex, setActivityIndex] = useState<number>(0);
+  //If its 0, weapon has not been set up yet
+  const [roundIndex, setRoundIndex] = useState<null | number>(null);
+
+  const getShotsMessage = () => {
+    switch (activities[activityIndex!].rounds[roundIndex!].shots) {
+      case 1:
+        return "singlet";
+      case 2:
+        return "dublet";
+      case 3:
+        return "triplet";
     }
   };
 
-  const getRandomIndex = (len: number) => {
-    return Math.floor(Math.random() * len);
-  };
-
-  const [currentTarget, setCurrentTarget] = useState(
-    getRandomTarget(ctx!.activeSet!.targets)
-  );
-
-  /** FIXME: ntarget - bez tego nie dziala, powód nieznany, trzeba podać przy rerenderze  */
-  const getMessage = (ntarget?: number) => {
-    return `Wystrzel ${getToFireMessage()} w tarcze ${
-      ntarget ?? currentTarget
+  const getMessage = () => {
+    return `Wystrzel ${getShotsMessage()} w tarcze ${
+      activities[activityIndex!].rounds[roundIndex!].target
     }`;
   };
 
-  const [currentWeaponIndex, setCurrentWeaponIndex] = useState(
-    getRandomIndex(weapons.length)
-  );
-  const [currentWeapon, setCurrentWeapon] = useState(
-    weapons[currentWeaponIndex]
-  );
-  const [currentMessage, setCurrentMessage] = useState(getMessage());
+  const getChangeWeaponMessage = (
+    differentWeapon: boolean,
+    weaponName: string
+  ) => {
+    if (differentWeapon) {
+      return `Zmień broń na ${weaponName}`;
+    }
+    return `Przeładuj ${weaponName}`;
+  };
+
+  const [didStart, setDidStart] = useState(false);
+  const [didEnd, setDidEnd] = useState(false);
+  const [currentMessage, setCurrentMessage] = useState<null | string>(null);
+  const [activeTarget, setActiveTarget] = useState<number | null>(null);
+  const [delay, setDelay] = useState<number | null>(null);
+
+  const startTraining = (delay: number = DEFAULT_DELAY) => {
+    speak("Przygotuj się");
+    setDelay(delay);
+    setDidStart(true);
+  };
+  const endTraining = () => {
+    speak("Koniec");
+    setDidEnd(true);
+    setDelay(null);
+  };
+
+  const didWeaponChange = () => {
+    if (activityIndex === 0) {
+      return true;
+    }
+    return (
+      activities[activityIndex - 1].weaponIndex !==
+      activities[activityIndex].weaponIndex
+    );
+  };
+
+  //this sets the delay for interval, if delay is null - interval stops
+  useInterval(() => {
+    const ev = new CustomEvent("next-round");
+    document.dispatchEvent(ev);
+    //TODO: REWRITE CAUSE UGLY
+    if (activityIndex < activities.length) {
+      if (roundIndex === null) {
+        //If its the first round
+
+        //If its not the first round
+
+        const areWeaponsTheSame = didWeaponChange();
+
+        const msg = getChangeWeaponMessage(
+          areWeaponsTheSame,
+          activities[activityIndex].weaponName
+        );
+        speak(msg);
+
+        setCurrentMessage(msg);
+
+        //starts with 0
+        setRoundIndex(0);
+      } else {
+        setActiveTarget(activities[activityIndex!].rounds[roundIndex!].target);
+        const msg = getMessage();
+        speak(msg);
+        setCurrentMessage(msg);
+        setRoundIndex((p) => p! + 1);
+
+        if (roundIndex === activities[activityIndex!].rounds.length - 1) {
+          setRoundIndex(null);
+          setActivityIndex((p) => p! + 1);
+        }
+      }
+    } else {
+      endTraining();
+    }
+  }, delay);
+
+  useEffect(() => {
+    // if (didStart && !didEnd) {
+    //   startTraining();
+    // }
+    if (didStart && didEnd) {
+      setDelay(null);
+    }
+    if (loading) {
+      setDelay(null);
+    }
+  }, [didStart, didEnd, loading]);
 
   return {
     loading,
-    targets: ctx!.activeSet!.targets,
     currentMessage,
-    currentTarget,
+    didStart,
+    didEnd,
+    startTraining,
+    endTraining,
+    activeTarget,
+    targets,
   };
 };

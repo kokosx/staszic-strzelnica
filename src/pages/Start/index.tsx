@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { type FormEvent } from "react";
 import { WeaponInUse } from "../../lib/types";
 import { SetContext } from "../../SetProvider";
+import WeaponsModal from "./WeaponsModal";
 
 const Start = () => {
   const [targets, setTargets] = useState(2);
@@ -36,6 +37,10 @@ const Start = () => {
     ]);
   };
 
+  const addWeaponFromList = (newWeapon: WeaponInUse) => {
+    setWeapons((prev) => [...prev, newWeapon]);
+  };
+
   const deleteWeapon = (index: number) => {
     setWeapons((prev) => prev.filter((_, i) => i !== index));
   };
@@ -63,6 +68,11 @@ const Start = () => {
     //
     activeSet!.setActiveSet({ targets, weapons });
     navigate("/training");
+  };
+
+  const openWeaponsModal = () => {
+    //@ts-expect-error exists cause of daisyui
+    document.getElementById("weapons-modal")!.showModal();
   };
 
   return (
@@ -147,7 +157,11 @@ const Start = () => {
           <button onClick={addNewWeapon} type="button" className="w-1/2 btn">
             Dodaj broń
           </button>
-          <button type="button" className="w-1/2 btn">
+          <button
+            onClick={openWeaponsModal}
+            type="button"
+            className="w-1/2 btn"
+          >
             Dodaj z listy
           </button>
         </div>
@@ -155,6 +169,7 @@ const Start = () => {
           Rozpocznij
         </button>
       </form>
+      <WeaponsModal addWeaponFromList={addWeaponFromList} />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Index from "./pages/Index";
@@ -7,6 +6,7 @@ import "./index.css";
 import Start from "./pages/Start";
 import Training from "./pages/Training";
 import SetProvider from "./SetProvider";
+import SafeContextWrapper from "./pages/Training/SafeContextWrapper";
 
 const router = createBrowserRouter([
   {
@@ -17,7 +17,14 @@ const router = createBrowserRouter([
     path: "/start",
     element: <Start />,
   },
-  { path: "/training", element: <Training /> },
+  {
+    path: "/training",
+    element: (
+      <SafeContextWrapper>
+        <Training />
+      </SafeContextWrapper>
+    ),
+  },
 ]);
 
 console.log(`
