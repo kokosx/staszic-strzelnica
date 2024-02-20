@@ -35,6 +35,7 @@ export const useTraining = () => {
     });
 
     while (weapons.length > 0) {
+      console.log("INITIAL LOOP");
       //Generate random weapon
       const weaponIndex = randomIndex(weapons.length);
       const weaponsRounds = getTrainingRoundsForWeapon(weaponIndex);
@@ -83,6 +84,7 @@ export const useTraining = () => {
     let nshots = generateShots();
 
     while (nshots > leftToFire) {
+      console.log("GENERATE SHOTS");
       nshots = generateShots();
     }
     return nshots;
@@ -92,6 +94,7 @@ export const useTraining = () => {
     let fired = 0;
     const rounds: TrainingRound[] = [];
     while (fired !== weapons[weaponIndex].rounds) {
+      console.log("GET TRAINING ROUNDS");
       const leftToFire = weapons[weaponIndex].rounds - fired;
       const toFire = generateShotsToFire(leftToFire);
       fired += toFire;
