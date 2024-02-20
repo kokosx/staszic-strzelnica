@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { SetContext } from "../../SetProvider";
 import { useInterval } from "usehooks-ts";
 
@@ -21,11 +21,10 @@ export const useTraining = () => {
   const ctx = useContext(SetContext);
   const [loading, setLoading] = useState(true);
 
-  const navigate = useNavigate();
-
   const [activities, setActivities] = useState<TrainingActivity[]>([]);
 
   useEffect(() => {
+    window.speechSynthesis.getVoices();
     //Setup indices
     const indices: Record<string, number> = {};
     weapons.forEach((v, i) => {
@@ -54,13 +53,12 @@ export const useTraining = () => {
 
       setLoading(false);
     }
-  }, [ctx, navigate]);
+  }, []);
 
   const speak = (msg: string) => {
     const synth = window.speechSynthesis;
     const utterance = new SpeechSynthesisUtterance(msg);
     const voices = synth.getVoices();
-    console.log(voices);
     utterance.voice = voices.filter((v) => v.lang === "pl-PL")[0];
     synth.speak(utterance);
   };

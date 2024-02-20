@@ -10,10 +10,6 @@ const index = () => {
         <Link to="start" className="w-full row-span-2 btn btn-primary">
           Rozpocznij
         </Link>
-
-        <Link to="sets" className="w-full btn btn-secondary">
-          Zestawy
-        </Link>
       </div>
     </div>
   );
