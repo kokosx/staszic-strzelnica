@@ -23,6 +23,8 @@ export const useTraining = () => {
 
   const [activities, setActivities] = useState<TrainingActivity[]>([]);
 
+  const [weapons, setWeapons] = useState(ctx!.activeSet!.weapons!);
+
   useEffect(() => {
     window.speechSynthesis.getVoices();
     //Setup indices
@@ -33,9 +35,9 @@ export const useTraining = () => {
         indices[v.name] = i;
       }
     });
-
-    while (weapons.length > 0) {
-      console.log("INITIAL LOOP");
+    let lweapons = weapons;
+    while (lweapons.length > 0) {
+      console.log("INITIAL LOOP", weapons);
       //Generate random weapon
       const weaponIndex = randomIndex(weapons.length);
       const weaponsRounds = getTrainingRoundsForWeapon(weaponIndex);
@@ -48,12 +50,18 @@ export const useTraining = () => {
       weapons[weaponIndex].magazines--;
       if (weapons[weaponIndex].magazines === 0) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        weapons = weapons.filter((_, i) => i !== weaponIndex);
+        setWeapons((p) => p.filter((_, i) => i !== weaponIndex));
+        lweapons = lweapons.filter((_, i) => i !== weaponIndex);
       }
       setActivities(trainingActivities);
 
       setLoading(false);
     }
+
+    return () => {
+      ctx?.setActiveSet(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const speak = (msg: string) => {
@@ -65,8 +73,6 @@ export const useTraining = () => {
   };
 
   const targets = ctx!.activeSet!.targets;
-
-  let weapons = ctx!.activeSet!.weapons;
 
   const trainingActivities: TrainingActivity[] = [];
 
